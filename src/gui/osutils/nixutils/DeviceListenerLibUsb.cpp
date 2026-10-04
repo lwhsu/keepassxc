@@ -112,11 +112,10 @@ void DeviceListenerLibUsb::deregisterHotplugCallback(Handle handle)
     if (!m_ctx || !m_callbackHandles.contains(handle)) {
         return;
     }
-#ifdef Q_OS_FREEBSD
-    auto* handleNative = reinterpret_cast<libusb_hotplug_callback_handle>(handle);
-#else
-    auto handleNative = static_cast<libusb_hotplug_callback_handle>(handle);
-#endif
+    // Read the native handle back out of the same storage registerHotplugCallback() wrote it into.
+    // This works whether libusb_hotplug_callback_handle is an int (libusb, FreeBSD >= 16)
+    // or a pointer (older FreeBSD).
+    auto handleNative = *reinterpret_cast<libusb_hotplug_callback_handle*>(&handle);
     libusb_hotplug_deregister_callback(static_cast<libusb_context*>(m_ctx), handleNative);
     m_callbackHandles.remove(handle);
 
